@@ -21,9 +21,9 @@ from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
 
 from pages.base_page import BasePage
-from pages.login_page import LoginPage
 from pages.article_page import ArticlePage
 
+import sys
 class BotManager:
     def __init__(self):
         self.logger = GhostLogger
@@ -37,95 +37,45 @@ class BotManager:
         )
         self.logger.handlers[0].setFormatter(formatter)
 
-    def actions(self):
+    def action_1(self):
         base_page = BasePage(self.driver, self.wait)
         base_page.go_to_page("https://www.facebook.com/MemesIns.Official/posts/pfbid033WU6qhsa4VMFTs7XfEGZqxhYmu2zYirBsoCsR34ySEVhD635kaUgYuT1zrvJKEm4l?_rdc=1&_rdr")
+        base_page.close_dialog()
+        # time.sleep(5)
+        return base_page.get_oneof_a_elements()
+    
+    def action_2(self, href):
+        base_page = BasePage(self.driver, self.wait)
+        base_page.go_to_page(href)
+        for attempt in range(3):
+            try:
+                # time.sleep(30)
+                href = base_page.click_oneof_a_elements_portal()
+            except Exception as e:
+                print('Retrying to get a element')
+                self.driver.switch_to.default_content()
+                continue
+            break
+        return href
+    
+    def action_3(self, href):
+        time.sleep(20)
+        base_page = BasePage(self.driver, self.wait)
+        base_page.go_to_page(href)
+        base_page.click_oneof_links()
         
+    def start_selenium(self, ads_id):
         
-        login_page = LoginPage(self.driver, self.wait)
-        login_page.close_dialog()
-        time.sleep(5)
-        
-        login_page.click_oneof_a_elements()
-        time.sleep(30)
-        
-        login_page.click_oneof_a_elements_portal()
-        
-    # def vote_actions(self):
-    #     base_page = BasePage(self.driver, self.wait)
-    #     prev_link = ""
-    #     count = 0
-    #     success_list = []
-    #     fail_list = []
-    #     last_success = True
-        
-    #     s_time = time.time()
-    #     for action in self.data:
-    #         # if (count >= 5):
-    #         #     break
-    #         try:
-    #             # Define the URL
-    #             proxy_url = 'http://ma2proxy.dynalias.com:11911/3029597d60d4da043867b9b5480d35b6/reset?proxy=ma2proxy.dynalias.com:4002'
-
-    #             # Make the GET request
-    #             response = requests.get(proxy_url)
-
-    #             # Check if the request was successful
-    #             if response.status_code == 200:
-    #                 data = response.json()  # Parse the JSON response
-    #                 print(data)
-    #             else:
-    #                 print(f"Error proxy: {response.status_code} - {response.text}")
-                    
-    #             time.sleep(30)
-                
-    #             print(f"Username: {action["username"]}, Password: {action["pass"]} is logging ..... ")
-                
-    #             page_loading_s_time = time.time()
-    #             if (prev_link != action["link"] or (not last_success)):
-    #                 base_page.go_to_page(action["link"])
-    #             prev_link = action["link"]
-    #             print(f"1: {(time.time() - page_loading_s_time): .2f}s ")
-                
-    #             page_loading_s_time = time.time()
-                
-    #             login_page = LoginPage(self.driver, self.wait)
-    #             login_page.login(action["username"], action["pass"])
-                
-    #             time.sleep(10)
-                
-    #             article_page = ArticlePage(self.driver, self.wait)
-    #             if (action['upvote'] == 'yes'):
-    #                 article_page.upvote()
-    #             else:
-    #                 article_page.downvote()
-                    
-    #             time.sleep(10)
-    #             article_page.comment(action["comment"])
-    #             time.sleep(10)
-    #             login_page.logout()
-    #             time.sleep(10)
-                
-    #             last_success = True
-    #             success_list.append(action)
-    #             print(f"2: {(time.time() - page_loading_s_time): .2f}s ")
-                
-    #         except Exception as e:
-    #             self.logger.error(f"An error occurred: {e}")
-    #             print(f"An error occurred: {e}")
-    #             last_success = False
-    #             fail_list.append(action)
-                
-    #         finally:
-    #             count = count + 1
-                
-    #     print(f"Total Time: {(time.time() - s_time): .2f}s ")
-                
-    #     print(f"\nSuccess : {len(success_list)}, Fail : {len(fail_list)}")
-    #     print(f"\nSuccess List\n{success_list}")
-    #     print(f"\nFail List\n{fail_list}")
-        
-    def start_selenium(self):
+        # Replace with your actual API key and other parameters
+        resp = requests.get(f"http://local.adspower.com:50325/api/v1/browser/start?user_id={ads_id}").json()
+        print(resp)
+        if resp["code"] != 0:
+            print(resp["msg"])
+            print("please check ads_id")
+            sys.exit(1)
+            
+        chrome_driver = resp["data"]["webdriver"]
+    
         options = webdriver.ChromeOptions()
     
         # options.add_argument('--headless')
@@ -134,9 +84,12 @@ class BotManager:
         # # options.add_argument('--window-size=1920,1080')
         # options.add_argument("--disable-dev-shm-usage")  # Overcome limited resource problems
         
+        # if (len(session_id) > 0):
+        #     options.add_argument(f"--user-data-dir=path_to_your_adspower_profile/{session_id}")  # Use the session ID
         options.add_argument("--disable-web-security")
         options.add_argument("--disable-features=IsolateOrigins,site-per-process")
         options.add_argument("--disable-extensions")
+        options.add_experimental_option("debuggerAddress", resp["data"]["ws"]["selenium"])
         
         # Disable image loading
         prefs = {
@@ -144,11 +97,12 @@ class BotManager:
         }
         options.add_experimental_option("prefs", prefs)
 
-        self.driver = webdriver.Chrome(service=ServiceChrome(ChromeDriverManager().install()), options=options)
+        self.driver = webdriver.Chrome(service=ServiceChrome(executable_path=chrome_driver), options=options)
         self.driver.execute_cdp_cmd("Network.setBlockedURLs", {"urls": ["*.mp4", "*.webm", "*.ogg", "*.mov"]})
 
         self.wait = WebDriverWait(self.driver, 30)
 
-    def close_selenium(self):
+    def close_selenium(self, ads_id):
         if self.driver:
             self.driver.quit()
+            requests.get(f"http://local.adspower.com:50325/api/v1/browser/stop?user_id={ads_id}")

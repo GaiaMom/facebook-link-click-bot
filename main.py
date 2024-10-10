@@ -20,11 +20,17 @@ if __name__ == "__main__":
     try:
         manager = BotManager()
         
-        manager.start_selenium()
+        manager.start_selenium("1023")
+        href = manager.action_1()
+        manager.close_selenium("1023")
         
-        manager.actions()
+        manager.start_selenium("1023")
+        href = manager.action_2(href)
+        manager.close_selenium("1023")
         
-        manager.close_selenium()
+        manager.start_selenium("1023")
+        href = manager.action_3(href)
+        manager.close_selenium("1023")
         
     except ValueError as e:
         print(f"Caught an error: {e}")

@@ -1,6 +1,6 @@
 from selenium.webdriver.common.by import By
 
-class LoginPageLocators:
+class BasePageLocators:
     DIALOG_CONTAINER = (By.CSS_SELECTOR, 'div[role="dialog"]')
     A_ELEMENT = (By.CSS_SELECTOR, 'a[rel="nofollow noreferrer"]')
 
