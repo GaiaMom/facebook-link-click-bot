@@ -21,7 +21,6 @@ from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
 
 from pages.base_page import BasePage
-from pages.article_page import ArticlePage
 
 import sys
 class BotManager:
@@ -63,19 +62,20 @@ class BotManager:
         base_page = BasePage(self.driver, self.wait)
         base_page.go_to_page(href)
         base_page.click_oneof_links()
-        
-    def start_selenium(self, ads_id):
-        
-        # Replace with your actual API key and other parameters
-        resp = requests.get(f"http://local.adspower.com:50325/api/v1/browser/start?user_id={ads_id}").json()
-        print(resp)
-        if resp["code"] != 0:
-            print(resp["msg"])
-            print("please check ads_id")
-            sys.exit(1)
+
+    def start_selenium(self):
+        proxy_url = 'http://ma2proxy.dynalias.com:11911/3029597d60d4da043867b9b5480d35b6/reset?proxy=ma2proxy.dynalias.com:4002'
+
+        # Make the GET request
+        response = requests.get(proxy_url)
+
+        # Check if the request was successful
+        if response.status_code == 200:
+            data = response.json()  # Parse the JSON response
+            print(data)
+        else:
+            print(f"Error proxy: {response.status_code} - {response.text}")
             
-        chrome_driver = resp["data"]["webdriver"]
-    
         options = webdriver.ChromeOptions()
     
         # options.add_argument('--headless')
@@ -84,12 +84,9 @@ class BotManager:
         # # options.add_argument('--window-size=1920,1080')
         # options.add_argument("--disable-dev-shm-usage")  # Overcome limited resource problems
         
-        # if (len(session_id) > 0):
-        #     options.add_argument(f"--user-data-dir=path_to_your_adspower_profile/{session_id}")  # Use the session ID
         options.add_argument("--disable-web-security")
         options.add_argument("--disable-features=IsolateOrigins,site-per-process")
         options.add_argument("--disable-extensions")
-        options.add_experimental_option("debuggerAddress", resp["data"]["ws"]["selenium"])
         
         # Disable image loading
         prefs = {
@@ -97,7 +94,7 @@ class BotManager:
         }
         options.add_experimental_option("prefs", prefs)
 
-        self.driver = webdriver.Chrome(service=ServiceChrome(executable_path=chrome_driver), options=options)
+        self.driver = webdriver.Chrome(service=ServiceChrome(ChromeDriverManager().install()), options=options)
         self.driver.execute_cdp_cmd("Network.setBlockedURLs", {"urls": ["*.mp4", "*.webm", "*.ogg", "*.mov"]})
 
         self.wait = WebDriverWait(self.driver, 30)
@@ -105,4 +102,44 @@ class BotManager:
     def close_selenium(self, ads_id):
         if self.driver:
             self.driver.quit()
-            requests.get(f"http://local.adspower.com:50325/api/v1/browser/stop?user_id={ads_id}")
+        
+    # def start_selenium(self, ads_id):
+        
+    #     # Replace with your actual API key and other parameters
+    #     resp = requests.get(f"http://local.adspower.com:50325/api/v1/browser/start?user_id={ads_id}").json()
+    #     print(resp)
+    #     if resp["code"] != 0:
+    #         print(resp["msg"])
+    #         print("please check ads_id")
+    #         sys.exit(1)
+            
+    #     chrome_driver = resp["data"]["webdriver"]
+    
+    #     options = webdriver.ChromeOptions()
+    
+    #     # options.add_argument('--headless')
+    #     # options.add_argument('--no-sandbox')
+    #     # options.add_argument('--disable-gpu')
+    #     # # options.add_argument('--window-size=1920,1080')
+    #     # options.add_argument("--disable-dev-shm-usage")  # Overcome limited resource problems
+        
+    #     options.add_argument("--disable-web-security")
+    #     options.add_argument("--disable-features=IsolateOrigins,site-per-process")
+    #     options.add_argument("--disable-extensions")
+    #     options.add_experimental_option("debuggerAddress", resp["data"]["ws"]["selenium"])
+        
+    #     # Disable image loading
+    #     prefs = {
+    #         "profile.managed_default_content_settings.images": 2  # 2 means block images
+    #     }
+    #     options.add_experimental_option("prefs", prefs)
+
+    #     self.driver = webdriver.Chrome(service=ServiceChrome(executable_path=chrome_driver), options=options)
+    #     self.driver.execute_cdp_cmd("Network.setBlockedURLs", {"urls": ["*.mp4", "*.webm", "*.ogg", "*.mov"]})
+
+    #     self.wait = WebDriverWait(self.driver, 30)
+
+    # def close_selenium(self, ads_id):
+    #     if self.driver:
+    #         self.driver.quit()
+    #         requests.get(f"http://local.adspower.com:50325/api/v1/browser/stop?user_id={ads_id}")
